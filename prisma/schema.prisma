@@ -1,0 +1,18 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Vote {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  number      Int
+  fingerprint String   @unique
+  ip          String
+  userAgent   String?
+  source      String?
+}

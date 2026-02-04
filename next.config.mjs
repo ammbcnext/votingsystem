@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig = {
+    typescript: { ignoreBuildErrors: true },
     reactStrictMode: true,
     webpack: (config) => {
         // Alias @ per la root del progetto

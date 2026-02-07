@@ -169,17 +169,58 @@ export default function RevealPage() {
         const { top3 } = results;
 
         const bubbles = gsap.utils.toArray(".vote-bubble") as HTMLElement[];
+        const podiumSteps = gsap.utils.toArray(".podium-step") as HTMLElement[];
+
+        // Animate Podium Steps UI
+        // Order: 2nd, 3rd, then 1st
+        const step2 = podiumSteps[0]; // Left
+        const step1 = podiumSteps[1]; // Center
+        const step3 = podiumSteps[2]; // Right
+
+        const podiumTimeline = gsap.timeline();
+
+        // Reveal Podium Steps
+        podiumTimeline.to([step2, step3], {
+            y: 0,
+            opacity: 1,
+            duration: 1,
+            ease: "back.out(1.2)",
+            stagger: 0.2
+        })
+            .to(step1, {
+                y: 0,
+                opacity: 1,
+                duration: 1.2,
+                ease: "elastic.out(1, 0.6)"
+            }, "-=0.5");
 
         // Top 3 numbers
         const winners = top3.map(t => t.number);
 
-        // Positions for 1st, 2nd, 3rd
+        // Calculate positions relative to center and podium heights
+        // Center of screen (x), but y needs to align with top of steps.
+        // The podium container has `pb-20` (padding bottom 5rem = 80px approx).
+        // Step heights: 1st=192px (h-48), 2nd=128px (h-32), 3rd=96px (h-24).
+        // We want bubbles to float ABOVE these steps.
+
         const cx = window.innerWidth / 2;
-        const cy = window.innerHeight / 2;
+        const bottomBase = window.innerHeight - 80; // pb-20 approx
+
+        // Podium tops (Y coordinates)
+        const y1 = bottomBase - 322; // 1st place height - bubble radius/margin
+        const y2 = bottomBase - 228; // 2nd place height
+        const y3 = bottomBase - 196;  // 3rd place height
+
+        // X offsets (based on width of steps + margins)
+        // Center is 0.
+        // 2nd (Left) is approx -140px (half 1st width + margin + half 2nd width)
+        // 3rd (Right) is approx +140px
+        // Let's tighten them as requested.
+
         const positions = [
-            { x: cx, y: cy - 100, scale: 2, label: "1st" }, // Gold
-            { x: cx - 250, y: cy + 50, scale: 1.5, label: "2nd" }, // Silver
-            { x: cx + 250, y: cy + 50, scale: 1.5, label: "3rd" }, // Bronze
+            { x: (cx - 26), y: y1, scale: 2.2, label: "1st" },    // Gold
+            { x: (cx - 184), y: y2, scale: 1.8, label: "2nd" },   // Silver
+            { x: (cx + 122), y: y3, scale: 1.7, label: "3rd" },    // Bronze
         ];
 
         // For every bubble
@@ -192,19 +233,24 @@ export default function RevealPage() {
                 const pos = positions[rankIndex];
 
                 gsap.to(b, {
-                    x: pos.x + (Math.random() * 40 - 20),
-                    y: pos.y + (Math.random() * 40 - 20),
-                    scale: pos.scale, // Scale up!
+                    x: pos.x,
+                    y: pos.y,
+                    scale: pos.scale,
                     zIndex: 100 - rankIndex,
                     duration: 2,
                     ease: "elastic.out(1, 0.5)",
-                    delay: rankIndex * 0.2 // 1st last? or first? usually 2, 3 then 1. 2=silver, 3=bronze.
-                    // Index 0 is Gold. Let's make Gold appear last for drama?
-                    // No, simultaneous is fine.
+                    delay: 1 + rankIndex * 0.2 // Wait for podium logic start
                 });
 
                 // Glow effect
-                gsap.to(b, { boxShadow: "0 0 30px rgba(255,215,0, 0.8)", repeat: -1, yoyo: true, duration: 1 });
+                const colors = ["#FFD700", "#C0C0C0", "#CD7F32"]; // Gold, Silver, Bronze
+                gsap.to(b, {
+                    boxShadow: `0 0 40px ${colors[rankIndex]}`,
+                    borderColor: colors[rankIndex],
+                    repeat: -1,
+                    yoyo: true,
+                    duration: 1.5
+                });
             } else {
                 // Loser fade out
                 gsap.to(b, { opacity: 0, scale: 0, duration: 1 });
@@ -286,9 +332,22 @@ export default function RevealPage() {
                 ))}
             </div>
 
-            {/* Podium Layer (Optional if using bubbles directly) */}
-            <div ref={podiumLayerRef} className="absolute inset-0 z-20 pointer-events-none">
-                {/* Can add pure CSS podium stands here if desired */}
+            {/* Podium Layer */}
+            <div ref={podiumLayerRef} className="absolute inset-0 z-20 pointer-events-none flex items-end justify-center pb-20">
+                {/* 2nd Place (Left) */}
+                <div className="podium-step podium-2 opacity-0 transform translate-y-full w-32 h-32 bg-gradient-to-t from-gray-400 to-gray-300 border-t-4 border-gray-100 flex items-start justify-center pt-4 shadow-2xl mx-1 relative">
+                    <span className="text-4xl font-black text-white/50">2</span>
+                </div>
+
+                {/* 1st Place (Center) */}
+                <div className="podium-step podium-1 opacity-0 transform translate-y-full w-40 h-48 bg-gradient-to-t from-yellow-500 to-yellow-300 border-t-4 border-yellow-100 flex items-start justify-center pt-4 shadow-2xl mx-1 relative z-10">
+                    <span className="text-6xl font-black text-white/50">1</span>
+                </div>
+
+                {/* 3rd Place (Right) */}
+                <div className="podium-step podium-3 opacity-0 transform translate-y-full w-32 h-24 bg-gradient-to-t from-orange-500 to-orange-400 border-t-4 border-orange-200 flex items-start justify-center pt-4 shadow-2xl mx-1 relative">
+                    <span className="text-4xl font-black text-white/50">3</span>
+                </div>
             </div>
         </div>
     );
